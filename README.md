@@ -208,7 +208,8 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 （4）算法未充分捕捉时序特征：策略网络采用 MLP 结构，未能显式建模排队时序演化规律。未来工作将引入 Transformer 或 LSTM 等时序建模模块，使智能体具备对排队趋势的长时记忆与预测能力。
 
 
-VI. 项目结构
+VI 项目结构
+text
 UAM-RL-Scheduler-IncomingAware/
 ├── data/
 │   ├── passengers_100.csv
