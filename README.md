@@ -210,31 +210,31 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 ## VI. 项目结构
 
 UAM-RL-Scheduler-IncomingAware/
-├── data/
-│   ├── passengers_100.csv
-│   ├── passengers_800.csv
-│   └── passengers_800_test.csv
-├── models/
-│   ├── improved_ppo/
-│   │   ├── final_model.zip
-│   │   └── vec_normalize.pkl
-│   └── seven_choice_ppo/
-│       ├── final_model.zip
-│       └── vec_normalize.pkl
-├── env.py
-├── seven_choice_env.py
-├── seven_choice_env_improved.py
-├── train.py
-├── train_improved.py
-├── test.py
-├── test_improved.py
-├── shortest_path.py
-├── shortest_path_with_penalty.py
-├── test_all_ground.py
-├── generate_passengers.py
-├── requirements.txt
-├── LICENSE
-└── README.md
+    data/
+        passengers_100.csv
+        passengers_800.csv
+        passengers_800_test.csv
+    models/
+        improved_ppo/
+            final_model.zip
+            vec_normalize.pkl
+        seven_choice_ppo/
+            final_model.zip
+            vec_normalize.pkl
+    env.py
+    seven_choice_env.py
+    seven_choice_env_improved.py
+    train.py
+    train_improved.py
+    test.py
+    test_improved.py
+    shortest_path.py
+    shortest_path_with_penalty.py
+    test_all_ground.py
+    generate_passengers.py
+    requirements.txt
+    LICENSE
+    README.md
 
 
 ## VII. 文件说明
