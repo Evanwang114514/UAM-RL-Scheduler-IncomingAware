@@ -20,11 +20,11 @@ UAGMC 论文（IEEE TITS 2026）首次提出了一个端到端的空地协同空
 
 起点 -> CAV -> 起飞机场 -> 排队 -> eVTOL -> 飞行 -> 降落机场 -> CAV -> 终点
 
-每位乘客 i 属于 N 具有起点 o_i 和终点 d_i，需要选择起飞机场 k_i 属于 V 和降落机场 l_i 属于 V。总出行时间定义为：
+每位乘客 i 属于集合 N 具有起点 o_i 和终点 d_i，需要选择起飞机场 k_i 属于集合 V 和降落机场 l_i 属于集合 V。总出行时间定义为：
 
-TT_i^tot = TT_{o_i -> k_i}^g + TW_{k_i}^wait + TT_{k_i -> l_i}^a + TT_{l_i -> d_i}^g
+TT_i^tot = TT_g(o_i -> k_i) + TW_wait(k_i) + TT_a(k_i -> l_i) + TT_g(l_i -> d_i)
 
-其中 TT^g 为地面出行时间，TW^wait 为排队等待时间，TT^a 为空中出行时间。
+其中 TT_g 为地面出行时间，TW_wait 为排队等待时间，TT_a 为空中出行时间。
 
 ### 2. 起降场布局
 
@@ -61,7 +61,7 @@ TT_i^tot = TT_{o_i -> k_i}^g + TW_{k_i}^wait + TT_{k_i -> l_i}^a + TT_{l_i -> d_
 
 系统目标为最小化所有乘客的平均总出行时间：
 
-min (1/|N|) * sum_i TT_i^tot
+min (1 / |N|) * sum_{i 属于 N} TT_i^tot
 
 该问题为典型的序贯决策问题，乘客间通过共享起降场与 eVTOL 资源产生强耦合，决策的时变性与排队动态的非平稳性使得传统静态优化方法难以适用。因此，本文将其建模为马尔可夫决策过程（MDP），采用深度强化学习求解。
 
@@ -103,7 +103,7 @@ A(t) 属于 {0, 1, ..., 6}
 
 奖励函数定义为已完成乘客平均总出行时间的负值：
 
-R(t) = -(1/|N_t|) * sum_i TT_i^tot
+R(t) = -(1 / |N_t|) * sum_{i 属于 N_t} TT_i^tot
 
 其中 N_t 为时刻 t 已完成出行的乘客集合，TT_i^tot 为乘客 i 的总出行时间。该奖励设计直接对齐优化目标，不存在奖励塑形带来的目标偏差问题。
 
@@ -132,7 +132,7 @@ R(t) = -(1/|N_t|) * sum_i TT_i^tot
 
 - **全部走地面**：所有乘客全程乘坐 CAV，不乘坐 eVTOL。总出行时间仅包含地面行程。
 
-- **最短路径**：每位乘客独立选择使 TT_{o_i -> k_i}^g + TT_{k_i -> l_i}^a + TT_{l_i -> d_i}^g 最小的起降场组合，k_i 与 l_i 可相同。该方案不考虑排队等待时间。
+- **最短路径**：每位乘客独立选择使 TT_g(o_i -> k_i) + TT_a(k_i -> l_i) + TT_g(l_i -> d_i) 最小的起降场组合，k_i 与 l_i 可相同。该方案不考虑排队等待时间。
 
 - **最短路惩罚**：在最短路径基础上引入排队惩罚项，将起降场选择代价修正为 TT^total + lambda * Q_k，其中 Q_k 为起降场 k 的当前排队人数。惩罚系数 lambda 取 225，该值通过对数网格搜索确定。该方案作为规则化的避堵基线。
 
@@ -232,3 +232,33 @@ python train_improved.py               # 训练本文方法（20维）
 # 测试模型
 python test.py                         # 测试基线 PPO（12维）
 python test_improved.py                # 测试本文方法（20维）
+
+
+项目结构
+text
+UAM-RL-Scheduler-IncomingAware/
+├── data/
+│   ├── passengers_100.csv
+│   ├── passengers_800.csv
+│   └── passengers_800_test.csv
+├── models/
+│   ├── improved_ppo/
+│   │   ├── final_model.zip
+│   │   └── vec_normalize.pkl
+│   └── seven_choice_ppo/
+│       ├── final_model.zip
+│       └── vec_normalize.pkl
+├── env.py
+├── seven_choice_env.py
+├── seven_choice_env_improved.py
+├── train.py
+├── train_improved.py
+├── test.py
+├── test_improved.py
+├── shortest_path.py
+├── shortest_path_with_penalty.py
+├── test_all_ground.py
+├── generate_passengers.py
+├── requirements.txt
+├── LICENSE
+└── README.md
