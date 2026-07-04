@@ -211,31 +211,31 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 ## VI. 项目结构
 
 UAM-RL-Scheduler-IncomingAware/
-├── data/                              # 乘客数据
+├── data/
 │   ├── passengers_100.csv
 │   ├── passengers_800.csv
 │   └── passengers_800_test.csv
-├── models/                            # 预训练模型
-│   ├── improved_ppo/                  # 本文方法（20 维）
+├── models/
+│   ├── improved_ppo/
 │   │   ├── final_model.zip
 │   │   └── vec_normalize.pkl
-│   └── seven_choice_ppo/              # 基线 PPO（12 维）
+│   └── seven_choice_ppo/
 │       ├── final_model.zip
 │       └── vec_normalize.pkl
-├── env.py                             # 核心仿真环境
-├── seven_choice_env.py                # 12 维状态环境
-├── seven_choice_env_improved.py       # 20 维状态环境
-├── train.py                           # 训练基线 PPO
-├── train_improved.py                  # 训练本文方法
-├── test.py                            # 测试基线 PPO
-├── test_improved.py                   # 测试本文方法
-├── shortest_path.py                   # 最短路径基线
-├── shortest_path_with_penalty.py      # 最短路惩罚基线
-├── test_all_ground.py                 # 全部走地面基线
-├── generate_passengers.py             # 生成乘客数据
-├── requirements.txt                   # Python 依赖
-├── LICENSE                            # MIT 许可证
-└── README.md                          # 项目说明文档
+├── env.py
+├── seven_choice_env.py
+├── seven_choice_env_improved.py
+├── train.py
+├── train_improved.py
+├── test.py
+├── test_improved.py
+├── shortest_path.py
+├── shortest_path_with_penalty.py
+├── test_all_ground.py
+├── generate_passengers.py
+├── requirements.txt
+├── LICENSE
+└── README.md
 
 
 ## VII. 文件说明
