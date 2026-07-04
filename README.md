@@ -238,26 +238,23 @@ UAM-RL-Scheduler-IncomingAware/
 └── README.md
 
 
-## VII. 文件说明
-
-| 文件 | 功能 |
-|---|---|
-| `env.py` | 核心仿真环境 |
-| `seven_choice_env.py` | 12 维状态环境包装器 |
-| `seven_choice_env_improved.py` | 20 维状态环境包装器 |
-| `train.py` | 训练基线 PPO（12维） |
-| `train_improved.py` | 训练本文方法（20维） |
-| `test.py` | 测试基线 PPO（12维） |
-| `test_improved.py` | 测试本文方法（20维） |
-| `shortest_path.py` | 最短路径基线 |
-| `shortest_path_with_penalty.py` | 最短路惩罚基线 |
-| `test_all_ground.py` | 全部走地面基线 |
-| `generate_passengers.py` | 生成乘客数据 |
-
-
-## VIII. 快速开始
-
-```bash
+VII. 文件说明
+表格
+文件	功能
+env.py	核心仿真环境
+seven_choice_env.py	12 维状态环境包装器
+seven_choice_env_improved.py	20 维状态环境包装器
+train.py	训练基线 PPO（12 维）
+train_improved.py	训练本文方法（20 维）
+test.py	测试基线 PPO（12 维）
+test_improved.py	测试本文方法（20 维）
+shortest_path.py	最短路径基线
+shortest_path_with_penalty.py	最短路惩罚基线
+test_all_ground.py	全部走地面基线
+generate_passengers.py	生成乘客数据
+VIII. 快速开始
+bash
+运行
 # 安装依赖
 pip install -r requirements.txt
 
