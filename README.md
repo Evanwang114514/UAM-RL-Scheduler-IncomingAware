@@ -1,3 +1,4 @@
+```txt
 # UAM-RL-Scheduler-IncomingAware
 
 UAM 垂直起降场调度的小规模仿真研究：城市平均地面速度（20 km/h），单乘客 eVTOL 容量，8 起降场，真实调度动力学，排队预测强化学习（PPO，35.68 分钟）
@@ -208,7 +209,8 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 （4）算法未充分捕捉时序特征：策略网络采用 MLP 结构，未能显式建模排队时序演化规律。未来工作将引入 Transformer 或 LSTM 等时序建模模块，使智能体具备对排队趋势的长时记忆与预测能力。
 
 
-VI. 项目结构
+## VI. 项目结构
+
 UAM-RL-Scheduler-IncomingAware/
 ├── data/
 │   ├── passengers_100.csv
@@ -236,26 +238,24 @@ UAM-RL-Scheduler-IncomingAware/
 ├── LICENSE
 └── README.md
 
+
 ## VII. 文件说明
 
-| 文件 | 功能 |
-|---|---|
-| `env.py` | 核心仿真环境 |
-| `seven_choice_env.py` | 12 维状态环境包装器 |
-| `seven_choice_env_improved.py` | 20 维状态环境包装器 |
-| `train.py` | 训练基线 PPO（12维） |
-| `train_improved.py` | 训练本文方法（20维） |
-| `test.py` | 测试基线 PPO（12维） |
-| `test_improved.py` | 测试本文方法（20维） |
-| `shortest_path.py` | 最短路径基线 |
-| `shortest_path_with_penalty.py` | 最短路惩罚基线 |
-| `test_all_ground.py` | 全部走地面基线 |
-| `generate_passengers.py` | 生成乘客数据 |
+env.py                            核心仿真环境
+seven_choice_env.py               12维状态环境包装器
+seven_choice_env_improved.py      20维状态环境包装器
+train.py                          训练基线PPO（12维）
+train_improved.py                 训练本文方法（20维）
+test.py                           测试基线PPO（12维）
+test_improved.py                  测试本文方法（20维）
+shortest_path.py                  最短路径基线
+shortest_path_with_penalty.py     最短路惩罚基线
+test_all_ground.py                全部走地面基线
+generate_passengers.py            生成乘客数据
 
 
 ## VIII. 快速开始
 
-```bash
 # 安装依赖
 pip install -r requirements.txt
 
@@ -274,3 +274,7 @@ python train_improved.py               # 训练本文方法（20维）
 # 测试模型
 python test.py                         # 测试基线 PPO（12维）
 python test_improved.py                # 测试本文方法（20维）
+
+
+MIT License
+```
