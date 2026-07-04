@@ -207,7 +207,9 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 
 （4）算法未充分捕捉时序特征：策略网络采用 MLP 结构，未能显式建模排队时序演化规律。未来工作将引入 Transformer 或 LSTM 等时序建模模块，使智能体具备对排队趋势的长时记忆与预测能力。
 
-text
+## VI 项目结构
+
+```text
 UAM-RL-Scheduler-IncomingAware/
 ├── data/
 │   ├── passengers_100.csv
@@ -235,35 +237,7 @@ UAM-RL-Scheduler-IncomingAware/
 ├── LICENSE
 └── README.md
 
-## VI 项目结构
-```txt
-UAM-RL-Scheduler-IncomingAware/
-├── data/
-│   ├── passengers_100.csv
-│   ├── passengers_800.csv
-│   └── passengers_800_test.csv
-├── models/
-│   ├── improved_ppo/
-│   │   ├── final_model.zip
-│   │   └── vec_normalize.pkl
-│   └── seven_choice_ppo/
-│       ├── final_model.zip
-│       └── vec_normalize.pkl
-├── env.py
-├── seven_choice_env.py
-├── seven_choice_env_improved.py
-├── train.py
-├── train_improved.py
-├── test.py
-├── test_improved.py
-├── shortest_path.py
-├── shortest_path_with_penalty.py
-├── test_all_ground.py
-├── generate_passengers.py
-├── requirements.txt
-├── LICENSE
-└── README.md
-```txt
+
 ## VII. 文件说明
 
 | 文件 | 功能 |
