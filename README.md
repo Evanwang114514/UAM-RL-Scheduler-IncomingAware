@@ -1,303 +1,301 @@
-#  Incoming-Aware Proximal Policy Optimization with Realistic Multi-Vehicle Dispatch Dynamics for Passenger-Centric Vertiport Selection in Urban Air Mobility
+# Incoming-Aware Proximal Policy Optimization with Realistic Multi-Vehicle Dispatch Dynamics for Passenger-Centric Vertiport Selection in Urban Air Mobility
 
-## I. 项目摘要
+## I. Abstract
 
-UAGMC 论文（IEEE TITS 2026）提出了一个空地协同空中出租车调度框架，通过 MSCE 与 STIN 处理高维异构状态信息，验证了深度强化学习在 UAM 起降场选择中的有效性。然而，城市交通环境呈现车速低（市区平均 20-30 km/h）、起降场数量多、乘客出行距离分布及需求差异大等特征，针对这些问题，本项目对此在小数据上进行了一定的调整与改进。
+The UAGMC paper (IEEE TITS 2026) proposed an air-ground collaborative air taxi dispatching framework that processes high-dimensional heterogeneous state information through MSCE and STIN, validating the effectiveness of deep reinforcement learning in UAM vertiport selection. However, urban traffic environments exhibit characteristics such as low vehicle speeds (urban average of 20-30 km/h), a large number of vertiports, and significant variations in passenger travel distance distributions and demand patterns. To address these issues, this project makes certain adjustments and improvements on small-scale data.
 
-本项目在 UAGMC 框架基础[1]上构建了一个城市内城市交通条件的 UAM 起降场调度仿真平台，核心内容包括：
+Building upon the UAGMC framework [1], this project constructs a UAM vertiport dispatching simulation platform under urban traffic conditions. The core contributions include:
 
-（1）X 型 8 起降场网络，覆盖 40×40 km 城市区域，每座起降场可同时承担发送与接收乘客的任务；
+(1) An X-shaped 8-vertiport network covering a 40x40 km urban area, where each vertiport can simultaneously handle both departure and arrival tasks;
 
-（2）采用针对对出行距离的乘客分类机制，乘客在地图内随机刷新，对短途出行乘客直接分配地面交通，避免强行分配飞机导致的效率损失；
+(2) A travel-distance-aware passenger classification mechanism, where passengers are randomly generated within the map and short-distance travelers are directly assigned to ground transportation to avoid efficiency loss from forced aircraft allocation;
 
-（3）采用简单真实 eVTOL 调度仿真，制定空闲 eVTOL 的调度策略，模拟真实的调度环境；
+(3) A realistic eVTOL dispatching simulation that formulates idle eVTOL scheduling strategies to emulate real-world dispatch environments;
 
-（4）排队预测强化学习，在状态空间中引入成乘客队列长度与降至的evtol数量，使智能体具备排队趋势预判能力，采用七选一动作空间为飞行乘客选择合适的起始起降场。
+(4) Queue-predictive reinforcement learning that introduces passenger queue length and incoming eVTOL count into the state space, enabling the agent to anticipate queue trends, and adopts a seven-choice action space for selecting suitable departure vertiports for air travelers.
 
-实验结果表明，在 20 km/h 城市平均速度、单乘客 eVTOL 容量、8 起降场的场景下，轻量级 PPO模型有效降低了系统平均出行时间与高峰时段排队压力，在精简特征和动作空间后，实现了UAM轻量化调度策略。
+Experimental results demonstrate that under the scenario of 20 km/h urban average speed, single-passenger eVTOL capacity, and 8 vertiports, the lightweight PPO model effectively reduces average system travel time and peak-hour queue pressure. After streamlining features and action space, a lightweight UAM dispatching strategy is achieved. This work builds upon the UAGMC framework [1] with realistic multi-vehicle dispatch dynamics, incoming-aware queue prediction, and short-trip ground diversion, validating the effectiveness of lightweight PPO in such scenarios.
 
 
-## II. 问题建模
+## II. Problem Formulation
 
-### A. 出行链建模
+### A. Passenger Travel Chain Modeling
 
-本文研究一个集成了地面 CAV 与空中 eVTOL 的多模式乘客运输系统。每位乘客的出行包含四个阶段：
+This paper studies a multi-modal passenger transportation system integrating ground-based CAVs and aerial eVTOLs. Each passenger's travel consists of four stages:
 
-$$ \text{起点} \xrightarrow{\text{CAV}} \text{起飞机场} \xrightarrow{\text{排队}} \text{eVTOL} \xrightarrow{\text{飞行}} \text{降落机场} \xrightarrow{\text{CAV}} \text{终点} $$
+$$ \text{Origin} \xrightarrow{\text{CAV}} \text{Departure Vertiport} \xrightarrow{\text{Queue}} \text{eVTOL} \xrightarrow{\text{Flight}} \text{Arrival Vertiport} \xrightarrow{\text{CAV}} \text{Destination} $$
 
-每位乘客 $i \in \mathcal{N}$ 具有起点 $o_i$ 和终点 $d_i$，需要选择起飞机场 $k_i \in \mathcal{V}$ 和降落机场 $l_i \in \mathcal{V}$。总出行时间定义为：
+Each passenger $i \in \mathcal{N}$ has an origin $o_i$ and a destination $d_i$, and needs to select a departure vertiport $k_i \in \mathcal{V}$ and an arrival vertiport $l_i \in \mathcal{V}$. The total travel time is defined as:
 
 $$ TT_{i}^{\text{tot}} = TT_{o_i \rightarrow k_i}^{\text{g}} + TW_{k_i}^{\text{wait}} + TT_{k_i \rightarrow l_i}^{\text{a}} + TT_{l_i \rightarrow d_i}^{\text{g}} $$
 
 
-### B. 起降场布局
+### B. Vertiport Layout
 
-环境设置 8 个同时具备起降功能的垂直起降场，呈 X 型布局覆盖 40×40 km 城市区域：
+The environment deploys 8 vertiports with both takeoff and landing capabilities, arranged in an X-shaped configuration covering a 40x40 km urban area:
 
-| 编号 | 坐标 (km) | 编号 | 坐标 (km) |
+| ID | Coordinates (km) | ID | Coordinates (km) |
 |---|---|---|---|
 | 0 | (5, 5) | 4 | (15, 25) |
 | 1 | (35, 5) | 5 | (25, 25) |
 | 2 | (15, 15) | 6 | (5, 35) |
 | 3 | (25, 15) | 7 | (35, 35) |
 
-乘客在地图范围内随机刷新，起点与终点由 16 个 10×10 km 网格块随机组合生成，并强制要求跨区块出行，覆盖不同距离的出行需求的同时排除出行距离过短的请求。
+Passengers are randomly generated within the map area, with origins and destinations randomly combined from 16 10x10 km grid blocks, with inter-block travel enforced to exclude excessively short trips.
 
-### C. 乘客刷新与分类机制
+### C. Passenger Generation and Classification Mechanism
 
-乘客在起点被激活后，系统首先计算起点到终点的地面直线距离。对于短途出行乘客（即地面出行时间小于任何可行飞行方案），系统直接分配地面交通，乘客以 CAV 速度前往终点，不进入起降场排队与飞行流程，此时直接视为完成出行任务。
+Upon activation at the origin, the system first calculates the straight-line ground distance from origin to destination. For short-distance passengers (whose ground travel time is less than any feasible flight option), the system directly assigns ground transportation. These passengers travel to their destination at CAV speed without entering vertiport queues or flight procedures, and are immediately considered to have completed their travel task.
 
-对于中长途出行乘客，系统首先采取最短路分配终点起降场，随后系统接入带有排队感知的模型为其分配起始起降场。乘客以地面 CAV 速度从起点移动至起飞机场，进入排队队列等待空闲 eVTOL，直至起飞后视为完成一次飞行任务。
+For medium- and long-distance passengers, the system first assigns the arrival vertiport using the shortest-path method, and then employs a queue-aware model to assign the departure vertiport. Passengers travel from their origin to the departure vertiport at CAV speed, enter the queue to wait for an available eVTOL, and are considered to have completed one flight task upon takeoff.
 
-### D. eVTOL 调度策略
+### D. eVTOL Dispatching Strategy
 
-本环境实现了通过多eVTOL的飞行调度模拟力求模拟更真实的调度环境。以时间步（tick=0.1 分钟）为单位依次执行以下调度逻辑：
+This environment implements a multi-eVTOL flight dispatching simulation to approximate real-world dispatch conditions. The following dispatching logic is executed sequentially at each time step (tick = 0.1 minutes):
 
-**起飞阶段**：每分钟遍历所有起降场，若某起降场同时存在排队乘客与空闲 eVTOL，则队头乘客出队飞往目标起降场。eVTOL进入飞行队列，乘客计算总时间后视为完成一次出行任务。
+**Takeoff Phase**: At each minute, all vertiports are traversed. If a vertiport has both queued passengers and an idle eVTOL, the head-of-queue passenger departs for the target vertiport. The eVTOL enters the flight queue, and the passenger's total time is recorded upon completion of the travel task.
 
-**调度阶段**：系统扫描所有起降场的排队长度，定位当前未分配eVTOL人数最多的起降场作为目标。检索所有空闲eVTOL，选择距离目标最近的 eVTOL 前往。此外，若该 eVTOL 飞抵目标起降场后，若该场仍有排队乘客，直接等待每分钟的起飞指令，形成动态补位。
+**Dispatching Phase**: The system scans the queue lengths of all vertiports and identifies the vertiport with the largest number of unassigned passengers as the target. All idle eVTOLs are retrieved, and the one closest to the target vertiport is dispatched. Furthermore, if the dispatched eVTOL arrives at the target vertiport and there are still queued passengers, it waits for the next minute's takeoff command, forming a dynamic replenishment mechanism.
 
-**飞行更新阶段**：每个时间步更新所有飞行中 eVTOL 的剩余飞行时间，当剩余时间归零时，eVTOL 到达目的地起降场，重新加入空闲池，准备执行下一任务。
+**Flight Update Phase**: At each time step, the remaining flight time of all in-flight eVTOLs is updated. When the remaining time reaches zero, the eVTOL arrives at the destination vertiport and rejoins the idle pool, ready for the next task.
 
-上述调度逻辑在有限飞机数量下尽可能均衡各起降场的服务能力，模拟了UAM 运营中的动态调度机制。
+The above dispatching logic balances the service capacity of each vertiport as much as possible under a limited fleet size, simulating the dynamic dispatching mechanisms in UAM operations.
 
-### E. 优化目标
+### E. Optimization Objective
 
-系统目标为最小化所有乘客的平均总出行时间：
+The system objective is to minimize the average total travel time across all passengers:
 
 $$ \min_{(k_i,l_i) \in \mathcal{V}^2} \frac{1}{|\mathcal{N}|} \sum_{i \in \mathcal{N}} TT_{i}^{\text{tot}} $$
 
-在该问题中，乘客间通过共享起降场与 eVTOL 资源产生强耦合，决策的时变性与排队动态的非平稳性使得传统静态优化方法难以适用。因此，本文将其建模为马尔可夫决策过程，采用深度强化学习求解。
+In this problem, passengers are strongly coupled through shared vertiport and eVTOL resources. The time-varying nature of decisions and the non-stationarity of queue dynamics render traditional static optimization methods inapplicable. Therefore, this paper formulates the problem as a Markov Decision Process and employs deep reinforcement learning to solve it.
 
 
-## III. 方法
+## III. Methodology
 
-### A. 整体框架
+### A. Overall Framework
 
-本文提出的方法框架包含三个核心模块：
+The proposed method framework consists of three core modules:
 
-- 仿真环境层：模拟UAM 起降场调度环境
-- 状态编码层：将原始观测编码为 20 维状态向量
-- 决策优化层：采用 PPO 算法训练策略网络，输出决策动作
+- Simulation Environment Layer: Simulates the UAM vertiport dispatching environment
+- State Encoding Layer: Encodes raw observations into a 20-dimensional state vector
+- Decision Optimization Layer: Employs the PPO algorithm to train a policy network that outputs decision actions
 
-### B. 状态空间设计
+### B. State Space Design
 
-在时刻 $t$，智能体从环境中观测到 20 维状态向量：
+At time $t$, the agent observes a 20-dimensional state vector from the environment:
 
 $$ S(t) = [Q_0, \ldots, Q_7, F_0, \ldots, F_7, x_o, y_o, x_d, y_d] $$
 
-| 分量 | 含义 | 维度 | 归一化方式 |
+| Component | Description | Dimension | Normalization |
 |---|---|---|---|
-| $Q_k$ | 起降场 $k$ 排队人数 | 8 | $Q_k / (\max Q + 1)$ |
-| $F_k$ | 飞往起降场 $k$ 的 eVTOL 数量 | 8 | $F_k / (\max F + 1)$ |
-| $(x_o, y_o)$ | 乘客起点坐标 | 2 | $x / 40$ |
-| $(x_d, y_d)$ | 乘客终点坐标 | 2 | $x / 40$ |
+| $Q_k$ | Queue length at vertiport $k$ | 8 | $Q_k / (\max Q + 1)$ |
+| $F_k$ | Number of eVTOLs flying to vertiport $k$ | 8 | $F_k / (\max F + 1)$ |
+| $(x_o, y_o)$ | Passenger origin coordinates | 2 | $x / 40$ |
+| $(x_d, y_d)$ | Passenger destination coordinates | 2 | $x / 40$ |
 
-**$F_k$ 的设计动机**：排队人数 $Q_k$ 反映的是当前时刻的拥堵状态，但无法预示排队趋势。考虑两种场景：起降场 A 排队人数多人但有较多 eVTOL 即将到达，实际等待时间较短；起降场 B 排队 较少人但无 eVTOL 调度，实际等待时间很长。$F_k$ 的引入使智能体能够预判排队演化趋势，从而做出更优的起降场选择。
+**Motivation for $F_k$**: The queue length $Q_k$ reflects the current congestion state but cannot indicate queue trends. Consider two scenarios: Vertiport A has a long queue but many eVTOLs are about to arrive, resulting in short actual wait times; Vertiport B has a short queue but no incoming eVTOLs, resulting in long actual wait times. The introduction of $F_k$ enables the agent to anticipate queue evolution trends and make better vertiport selection decisions.
 
-### C. 动作空间裁剪
+### C. Action Space Reduction
 
-动作为七选一离散选择：
+The action is a seven-choice discrete selection:
 
 $$ A(t) \in \{0, 1, \ldots, 6\} $$
 
-其中动作 $a$ 表示选择按总出行时间（即步行 + 飞行）排序后的第 $a$ 个起降场（排除终点起降场）。降落机场固定为离乘客目的地最近的起降场。
+where action $a$ denotes selecting the $a$-th vertiport (excluding the arrival vertiport) sorted by total travel time (walking + flight). The arrival vertiport is fixed to the one closest to the passenger's destination.
 
-### D. 奖励函数设计
+### D. Reward Function Design
 
-奖励函数定义为已完成乘客平均总出行时间的负值：
+The reward function is defined as the negative value of the average total travel time of completed passengers:
 
 $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}} $$
 
-其中 $\mathcal{N}_t$ 为时刻 $t$ 已完成出行的乘客集合。该奖励设计直接对齐优化目标，不存在奖励塑形带来的目标偏差问题。
+where $\mathcal{N}_t$ is the set of passengers who have completed travel by time $t$. This reward design directly aligns with the optimization objective, avoiding goal deviation caused by reward shaping.
 
 
-## IV. 实验
+## IV. Experiments
 
-### A. 实验设置
+### A. Experimental Setup
 
-本文实验基于 40×40 km 城市区域、8 个 X 型布局起降场的仿真环境。主要参数配置如下：
+The experiments are conducted on a simulation environment with a 40x40 km urban area and 8 vertiports in an X-shaped layout. The key parameters are configured as follows:
 
-| 参数 | 值 |
+| Parameter | Value |
 |---|---|
-| 地图大小 | 40 × 40 km |
-| 起降场数量 | 8 个 |
-| 地面 CAV 速度 | 20 km/h |
-| eVTOL 飞行速度 | 120 km/h |
-| eVTOL 载客量 | 1 人（用于简化场景） |
-| 乘客规模 | 800 人（每0.5min刷新一位） |
-| eVTOL 数量 | 8 / 12 / 16 架 |
-| 训练步数 | 12 万步 |
-| 折扣因子 γ | 0.99 |
-| 熵系数 | 0.03 |
+| Map Size | 40 x 40 km |
+| Number of Vertiports | 8 |
+| Ground CAV Speed | 20 km/h |
+| eVTOL Flight Speed | 120 km/h |
+| eVTOL Passenger Capacity | 1 (for scenario simplification) |
+| Passenger Demand | 800 passengers (one generated every 0.5 min) |
+| Number of eVTOLs | 8 / 12 / 16 |
+| Training Steps | 120,000 |
+| Discount Factor $\gamma$ | 0.99 |
+| Entropy Coefficient | 0.03 |
 
-**对比方法**：
+**Baseline Methods**:
 
-- **全部走地面**：所有乘客全程乘坐 CAV，不乘坐 eVTOL。总出行时间仅包含地面行程。
+- **All Ground**: All passengers travel exclusively by CAV without using eVTOLs. Total travel time includes only ground travel.
 
-- **最短路径**：每位乘客独立选择使 $TT_{o_i \rightarrow k_i}^{\text{g}} + TT_{k_i \rightarrow l_i}^{\text{a}} + TT_{l_i \rightarrow d_i}^{\text{g}}$ 最小的起降场组合，同样地，乘客可选择全程地面，此时飞行距离为零，决策退化为 $TT^{\text{tot}} = TT_{o_i \rightarrow d_i}^{\text{g}}$。该方案不考虑排队等待时间 $TW^{\text{wait}}$。
+- **Shortest Path**: Each passenger independently selects the vertiport pair that minimizes $TT_{o_i \rightarrow k_i}^{\text{g}} + TT_{k_i \rightarrow l_i}^{\text{a}} + TT_{l_i \rightarrow d_i}^{\text{g}}$. Passengers may also choose ground travel throughout, in which case the flight distance is zero and the decision reduces to $TT^{\text{tot}} = TT_{o_i \rightarrow d_i}^{\text{g}}$. This method does not consider waiting time $TW^{\text{wait}}$.
 
-- **最短路惩罚**：在最短路径基础上引入排队惩罚项，将起降场选择代价修正为 $TT^{\text{total}} + \lambda \times Q_k$，其中 $Q_k$ 为起降场 $k$ 的当前排队人数。惩罚系数 $\lambda$ 取 225（对应 22.5 分钟/人），该值通过实验多次验证（惩罚系数在200-250区间内效果最优）。该方案作为规则化的避堵基线。
+- **Shortest Path with Penalty**: Introduces a queue penalty term on top of the shortest path, modifying the vertiport selection cost to $TT^{\text{total}} + \lambda \times Q_k$, where $Q_k$ is the current queue length at vertiport $k$. The penalty coefficient $\lambda$ is set to 225 (corresponding to 22.5 minutes per passenger), determined through repeated experimental validation (penalty coefficients in the 200-250 range yield optimal performance). This method serves as a rule-based congestion avoidance baseline.
 
-- **基线 PPO（12 维）**：采用与本文相同的 PPO 算法与网络结构，但状态空间仅包含 8 个起降场的排队人数与 4 维起终点坐标（共 12 维），不含飞往 eVTOL 数量特征。该方案用于验证本文 20 维状态设计的有效性。
+- **Baseline PPO (12-dim)**: Uses the same PPO algorithm and network architecture as the proposed method, but the state space includes only the 8 vertiport queue lengths and 4-dimensional origin-destination coordinates (12 dimensions total), without the incoming eVTOL count feature. This method is used to validate the effectiveness of the proposed 20-dimensional state design.
 
-**评估指标**：
+**Evaluation Metrics**:
 
-- 平均地面出行时间（AGT）
-- 平均等待时间（AWT）
-- 平均空中出行时间（AAT）
-- 平均总出行时间（ATT）：AGT + AWT + AAT，本文的最终优化目标
-- 系统完成时间：所有乘客完成出行所需的总仿真时长，反映系统吞吐效率
+- Average Ground Travel Time (AGT)
+- Average Waiting Time (AWT)
+- Average Air Travel Time (AAT)
+- Average Total Travel Time (ATT): AGT + AWT + AAT, the ultimate optimization objective of this paper
+- System Completion Time: Total simulation time required for all passengers to complete their travel, reflecting system throughput efficiency
 
-### B. 实验结果
+### B. Experimental Results
 
-#### (1) 8 架 eVTOL 配置
+#### (1) 8 eVTOL Configuration
 
-| 方法 | AGT | AWT | AAT | ATT | 完成时间 |
+| Method | AGT | AWT | AAT | ATT | Completion Time |
 |---|---|---|---|---|---|
-| 全部走地面 | 65.52 | — | — | 65.52 | 399.6 |
-| 最短路径 | 25.89 | 133.51 | 7.66 | 167.06 | 842.2 |
-| 最短路惩罚 | 24.08 | 84.77 | 6.84 | 115.69 | 744.3 |
-| 基线 PPO（12 维）| 24.03 | 74.83 | 6.36 | 105.22 | 710.8 |
-| **本文方法（20 维）** | **23.02** | **69.39** | **6.19** | **98.60** | **693.7** |
+| All Ground | 65.52 | — | — | 65.52 | 399.6 |
+| Shortest Path | 25.89 | 133.51 | 7.66 | 167.06 | 842.2 |
+| Shortest Path with Penalty | 24.08 | 84.77 | 6.84 | 115.69 | 744.3 |
+| Baseline PPO (12-dim) | 24.03 | 74.83 | 6.36 | 105.22 | 710.8 |
+| **Proposed Method (20-dim)** | **23.02** | **69.39** | **6.19** | **98.60** | **693.7** |
 
-8 架配置下，本文方法相比最短路径 ATT 降低 **41.0%**，相比最短路惩罚降低 **14.8%**，相比基线 PPO 降低 **6.3%**。
+Under the 8-vehicle configuration, the proposed method reduces ATT by **41.0%** compared to Shortest Path, by **14.8%** compared to Shortest Path with Penalty, and by **6.3%** compared to Baseline PPO.
 
-#### (2) 12 架 eVTOL 配置
+#### (2) 12 eVTOL Configuration
 
-| 方法 | AGT | AWT | AAT | ATT | 完成时间 |
+| Method | AGT | AWT | AAT | ATT | Completion Time |
 |---|---|---|---|---|---|
-| 全部走地面 | 65.52 | — | — | 65.52 | 399.6 |
-| 最短路径 | 25.89 | 47.60 | 7.66 | 81.15 | 579.3 |
-| 最短路惩罚 | 24.32 | 25.06 | 6.88 | 56.26 | 517.3 |
-| 基线 PPO（12 维）| 24.10 | 20.24 | 6.46 | 50.80 | 500.5 |
-| **本文方法（20 维）** | **23.21** | **18.66** | **6.17** | **48.03** | **501.8** |
+| All Ground | 65.52 | — | — | 65.52 | 399.6 |
+| Shortest Path | 25.89 | 47.60 | 7.66 | 81.15 | 579.3 |
+| Shortest Path with Penalty | 24.32 | 25.06 | 6.88 | 56.26 | 517.3 |
+| Baseline PPO (12-dim) | 24.10 | 20.24 | 6.46 | 50.80 | 500.5 |
+| **Proposed Method (20-dim)** | **23.21** | **18.66** | **6.17** | **48.03** | **501.8** |
 
-12 架配置下，本文方法相比最短路径 ATT 降低 **40.8%**，相比最短路惩罚降低 **14.6%**，相比基线 PPO 降低 **5.5%**。
+Under the 12-vehicle configuration, the proposed method reduces ATT by **40.8%** compared to Shortest Path, by **14.6%** compared to Shortest Path with Penalty, and by **5.5%** compared to Baseline PPO.
 
-#### (3) 16 架 eVTOL 配置
+#### (3) 16 eVTOL Configuration
 
-| 方法 | AGT | AWT | AAT | ATT | 完成时间 |
+| Method | AGT | AWT | AAT | ATT | Completion Time |
 |---|---|---|---|---|---|
-| 全部走地面 | 65.52 | — | — | 65.52 | 399.6 |
-| 最短路径 | 25.89 | 12.61 | 7.66 | 46.16 | 448.2 |
-| 最短路惩罚 | 24.73 | 9.65 | 7.06 | 41.44 | 448.2 |
-| 基线 PPO（12 维）| 24.30 | 6.57 | 6.60 | 37.47 | 440.8 |
-| **本文方法（20 维）** | **23.47** | **5.86** | **6.35** | **35.68** | **441.2** |
+| All Ground | 65.52 | — | — | 65.52 | 399.6 |
+| Shortest Path | 25.89 | 12.61 | 7.66 | 46.16 | 448.2 |
+| Shortest Path with Penalty | 24.73 | 9.65 | 7.06 | 41.44 | 448.2 |
+| Baseline PPO (12-dim) | 24.30 | 6.57 | 6.60 | 37.47 | 440.8 |
+| **Proposed Method (20-dim)** | **23.47** | **5.86** | **6.35** | **35.68** | **441.2** |
 
-16 架配置下，本文方法相比最短路径 ATT 降低 **22.7%**，相比最短路惩罚降低 **13.9%**，相比基线 PPO 降低 **4.8%**。
+Under the 16-vehicle configuration, the proposed method reduces ATT by **22.7%** compared to Shortest Path, by **13.9%** compared to Shortest Path with Penalty, and by **4.8%** compared to Baseline PPO.
 
-### C. 实验结论
+### C. Experimental Conclusions
 
-综合上述实验结果，可得出以下结论：
+Based on the above experimental results, the following conclusions can be drawn:
 
-（1）PPO 方法优于规则基线：在三种 eVTOL 配置下，本文 PPO 方法均优于最短路径与最短路惩罚基线，验证了强化学习通过与环境交互学习动态避堵策略，优于线性固定规则的惩罚方法。
+(1) PPO outperforms rule-based baselines: Under all three eVTOL configurations, the proposed PPO method consistently outperforms both the Shortest Path and Shortest Path with Penalty baselines, demonstrating that reinforcement learning, through interaction with the environment, learns dynamic congestion avoidance strategies that surpass fixed linear penalty rules.
 
-（2）排队预判特征有效：通过消融实验对比基线 PPO（12 维，仅包含乘客信息与队列长度）与本文方法（20 维，含飞往 eVTOL 数量），AWT 有显著降低。观察飞往起降场的 eVTOL 数量使模型更能够预测每个起降场的排队趋势。
+(2) Queue prediction features are effective: Through ablation experiments comparing Baseline PPO (12-dim, containing only passenger information and queue lengths) with the proposed method (20-dim, including incoming eVTOL count), AWT shows significant reduction. Observing the number of eVTOLs flying to vertiports enables the model to better predict queue trends at each vertiport.
 
-（3）运力紧张场景下模型优势更显著：8 架 eVTOL（运力紧张）时相比16 架（运力充足）本文方法相比基线 PPO 的 ATT 降低更多。验证了在运力紧张时排队更容易累积，模型通过排队预判与动态避堵获得的收益更大。
+(3) Model advantages are more significant under capacity-constrained scenarios: Under the 8-vehicle configuration (capacity-constrained), the proposed method achieves greater ATT reduction compared to Baseline PPO than under the 16-vehicle configuration (capacity-sufficient). This validates that when queues are more likely to accumulate under capacity constraints, the model gains more from queue prediction and dynamic congestion avoidance.
 
-（4）地面-飞行分类机制有效：本文方法在三种配置下的地面完成人数高于最短路径与最短路惩罚。短途乘客被合理分配地面交通，有效缓解了起降场排队压力，提升系统出行效率。
+(4) Ground-air classification mechanism is effective: The proposed method achieves higher ground completion rates than Shortest Path and Shortest Path with Penalty across all three configurations. Short-distance passengers are reasonably assigned to ground transportation, effectively alleviating vertiport queue pressure and improving system travel efficiency.
 
-（5）强化学习方法对吞吐效率的提升：相比于最短路，强化学习方法能够在更短时间内完成所有乘客的调度任务，对复杂系统的适应性更强。
+(5) Reinforcement learning improves throughput efficiency: Compared to Shortest Path, the reinforcement learning method completes all passenger dispatching tasks in shorter time, demonstrating stronger adaptability to complex systems.
 
 
-## V. 研究局限与未来方向
+## V. Limitations and Future Directions
 
-（1）特征维度依然不足：本项目状态维度仅包含乘客信息与起降场的简单吞吐信息，后续工作可以关注更多环境变量，充分预测环境及演化趋势。
+(1) Insufficient feature dimensions: The current state space only includes passenger information and simple vertiport throughput information. Future work should incorporate more environmental variables to fully predict environmental evolution trends.
 
-（2）eVTOL 调度规则尚为人工设计：调度策略基于人工设计规则，尚未实现调度与乘客选择的联合优化。未来工作将引入多智能体联合强化学习框架，实现 eVTOL 调度与乘客起降场选择的联合优化。
+(2) eVTOL dispatching rules remain manually designed: The dispatching strategy is based on manually designed rules and has not yet achieved joint optimization of dispatching and passenger selection. Future work will introduce multi-agent joint reinforcement learning frameworks to achieve joint optimization of eVTOL dispatching and passenger vertiport selection.
 
-（3）场景假设与真实运营环境存在差距：实验基于理想化假设，即固定乘客数量、固定地面速度、无空域约束，无通信约束等。未来工作将引入动态乘客生成模型、起降场容量约束、充电约束与空域约束。
+(3) Gap between scenario assumptions and real operational environments: Experiments are based on idealized assumptions, including fixed passenger numbers, fixed ground speeds, and no airspace or communication constraints. Future work will introduce dynamic passenger generation models, vertiport capacity constraints, charging constraints, and airspace constraints.
 
-（4）算法未充分捕捉时序特征：策略网络未能显式建模排队时序演化规律。未来工作将引入 Transformer 或 LSTM 等时序建模模块，使智能体具备对排队趋势的长时记忆与预测能力。
+(4) Insufficient temporal feature capture: The policy network fails to explicitly model queue temporal evolution patterns. Future work will introduce Transformer or LSTM-based temporal modeling modules to equip the agent with long-term memory and prediction capabilities for queue trends.
 
-（5）算力受限导致训练不充分：受限于本地 CPU 算力，训练步数较少，模型稳定性与最优性可能未达上限。未来工作将扩展训练步数，训练更加稳定的分配模型。
+(5) Limited computational resources leading to insufficient training: Due to local CPU computational limitations, the number of training steps is relatively small, and model stability and optimality may not have reached their upper bounds. Future work will extend training steps to train more stable allocation models.
 
-## VI. 项目结构
 
-VI. 项目结构
+## VI. Project Structure
 
 ```
 UAM-RL-Scheduler-IncomingAware/
-    data/
-        passengers_100.csv
-        passengers_800.csv
-        passengers_800_test.csv
-    models/
-        improved_ppo/
-            final_model.zip
-            vec_normalize.pkl
-        seven_choice_ppo/
-            final_model.zip
-            vec_normalize.pkl
-    env.py
-    seven_choice_env.py
-    seven_choice_env_improved.py
-    train.py
-    train_improved.py
-    test.py
-    test_improved.py
-    shortest_path.py
-    shortest_path_with_penalty.py
-    test_all_ground.py
-    generate_passengers.py
-    requirements.txt
-    LICENSE
-    README.md
+├── data/
+│   ├── passengers_100.csv
+│   ├── passengers_800.csv
+│   └── passengers_800_test.csv
+├── models/
+│   ├── improved_ppo/
+│   │   ├── final_model.zip
+│   │   └── vec_normalize.pkl
+│   └── seven_choice_ppo/
+│       ├── final_model.zip
+│       └── vec_normalize.pkl
+├── env.py
+├── seven_choice_env.py
+├── seven_choice_env_improved.py
+├── train.py
+├── train_improved.py
+├── test.py
+├── test_improved.py
+├── shortest_path.py
+├── shortest_path_with_penalty.py
+├── test_all_ground.py
+├── generate_passengers.py
+├── requirements.txt
+├── LICENSE
+└── README.md
 ```
 
-## VII. 文件说明
+## VII. File Descriptions
 
-| 文件 | 功能 |
+| File | Description |
 |---|---|
-| env.py | 核心仿真环境 |
-| seven_choice_env.py | 12维状态环境包装器 |
-| seven_choice_env_improved.py | 20维状态环境包装器 |
-| train.py | 训练基线PPO（12维） |
-| train_improved.py | 训练本文方法（20维） |
-| test.py | 测试基线PPO（12维） |
-| test_improved.py | 测试本文方法（20维） |
-| shortest_path.py | 最短路径基线 |
-| shortest_path_with_penalty.py | 最短路惩罚基线 |
-| test_all_ground.py | 全部走地面基线 |
-| generate_passengers.py | 生成乘客数据 |
+| env.py | Core simulation environment |
+| seven_choice_env.py | 12-dim state environment wrapper |
+| seven_choice_env_improved.py | 20-dim state environment wrapper |
+| train.py | Train baseline PPO (12-dim) |
+| train_improved.py | Train proposed method (20-dim) |
+| test.py | Test baseline PPO (12-dim) |
+| test_improved.py | Test proposed method (20-dim) |
+| shortest_path.py | Shortest path baseline |
+| shortest_path_with_penalty.py | Shortest path with penalty baseline |
+| test_all_ground.py | All-ground baseline |
+| generate_passengers.py | Generate passenger data |
 
 
-## VIII. 快速开始
+## VIII. Quick Start
 
 ```bash
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 生成乘客数据
+# Generate passenger data
 python generate_passengers.py
 
-# 运行基线
-python test_all_ground.py              # 全部走地面
-python shortest_path.py                # 最短路径
-python shortest_path_with_penalty.py   # 最短路惩罚
+# Run baselines
+python test_all_ground.py              # All ground
+python shortest_path.py                # Shortest path
+python shortest_path_with_penalty.py   # Shortest path with penalty
 
-# 训练模型
-python train.py                        # 训练基线 PPO（12维）
-python train_improved.py               # 训练本文方法（20维）
+# Train models
+python train.py                        # Train baseline PPO (12-dim)
+python train_improved.py               # Train proposed method (20-dim)
 
-# 测试模型
-python test.py                         # 测试基线 PPO（12维）
-python test_improved.py                # 测试本文方法（20维）
+# Test models
+python test.py                         # Test baseline PPO (12-dim)
+python test_improved.py                # Test proposed method (20-dim)
 ```
 
-## IX. 总结
+## IX. Conclusion
 
-本项目展示了一个小规模的UAM起降场调度仿真框架，用于分析轻量级PPO在城市空中交通场景下的调度稳定性与效率。实验结果表明，来机感知的队列预测在运力紧张时效果更显著，简单状态特征在低速城市场景下可以取得优于规则基线的调度性能。
+This project presents a small-scale UAM vertiport dispatching simulation framework for analyzing the dispatching stability and efficiency of lightweight PPO in urban air mobility scenarios. Experimental results demonstrate that incoming-aware queue prediction is more effective under capacity-constrained conditions, and simple state features can achieve performance superior to rule-based baselines in low-speed urban scenarios.
 
-本项目在引入真实多机调度构建了一个简单逻辑的人机协同系统，而来机感知特征使模型能够预判排队趋势，在运力充足时贡献更为明显。短途乘客地面分流机制从源头减少了不必要的起降场排队。
+By introducing realistic multi-vehicle dispatch dynamics, this project constructs a simple human-machine collaborative system, while the incoming-aware feature enables the model to anticipate queue trends, with more significant contributions under sufficient capacity. The short-distance passenger ground diversion mechanism reduces unnecessary vertiport queuing from the source.
 
-客观来说，在真实的城市系统中难以对所有乘客与eVTLOL进行完整的仿真，故仅是在理想小规模环境下提供了一个轻量化实验框架，在此类场景下精简状态与简单策略足以有效，但是在庞大数据集上实验是适当的利用服务率等参数简化或估计并提升观测维度数量是必要的。
+Objectively speaking, it is difficult to conduct complete per-vehicle simulations for all passengers and eVTOLs in real urban systems. Therefore, this work provides a lightweight experimental framework under idealized small-scale environments. In such scenarios, streamlined states and simple strategies are sufficient. However, in larger-scale or more complex scenarios, appropriate simplification or estimation using parameters such as service rates, along with increasing observation dimensions, remains necessary.
 
-## X. 参考文献
+## X. References
 ```
 [1] A. Pang et al., "Heterogeneous Vertiport Selection Optimization for On-Demand Air Taxi Services: A Deep Reinforcement Learning Approach," in IEEE Transactions on Intelligent Transportation Systems, doi: 10.1109/TITS.2026.3680351.
-keywords: {Urban air mobility;Aircraft navigation;Air traffic control;Jamming;System-on-chip;Communication systems;Routing;Vehicle-to-everything;Computer networks;Intserv networks;Urban air mobility;air taxi;deep reinforcement learning;multimodal transportation system},
 ```
 
