@@ -25,7 +25,6 @@ $$ \text{起点} \xrightarrow{\text{CAV}} \text{起飞机场} \xrightarrow{\text
 
 $$ TT_{i}^{\text{tot}} = TT_{o_i \rightarrow k_i}^{\text{g}} + TW_{k_i}^{\text{wait}} + TT_{k_i \rightarrow l_i}^{\text{a}} + TT_{l_i \rightarrow d_i}^{\text{g}} $$
 
-其中 $TT^{\text{g}}$ 为地面出行时间，$TW^{\text{wait}}$ 为排队等待时间，$TT^{\text{a}}$ 为空中出行时间。
 
 ### B. 起降场布局
 
@@ -148,7 +147,7 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 
 ### B. 实验结果
 
-#### 1) 8 架 eVTOL 配置
+#### (1) 8 架 eVTOL 配置
 
 | 方法 | AGT | AWT | AAT | ATT | 完成时间 |
 |---|---|---|---|---|---|
@@ -160,7 +159,7 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 
 8 架配置下，本文方法相比最短路径 ATT 降低 **41.0%**，相比最短路惩罚降低 **14.8%**，相比基线 PPO 降低 **6.3%**。
 
-#### 2) 12 架 eVTOL 配置
+#### (2) 12 架 eVTOL 配置
 
 | 方法 | AGT | AWT | AAT | ATT | 完成时间 |
 |---|---|---|---|---|---|
@@ -172,7 +171,7 @@ $$ R(t) = -\frac{1}{|\mathcal{N}_t|} \sum_{i \in \mathcal{N}_t} TT_i^{\text{tot}
 
 12 架配置下，本文方法相比最短路径 ATT 降低 **40.8%**，相比最短路惩罚降低 **14.6%**，相比基线 PPO 降低 **5.5%**。
 
-#### 3) 16 架 eVTOL 配置
+#### (3) 16 架 eVTOL 配置
 
 | 方法 | AGT | AWT | AAT | ATT | 完成时间 |
 |---|---|---|---|---|---|
