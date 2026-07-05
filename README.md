@@ -4,7 +4,7 @@
 
 UAGMC 论文（IEEE TITS 2026）提出了一个空地协同空中出租车调度框架，通过 MSCE 与 STIN 处理高维异构状态信息，验证了深度强化学习在 UAM 起降场选择中的有效性。然而，城市交通环境呈现车速低（市区平均 20-30 km/h）、起降场数量多、乘客出行距离分布及需求差异大等特征，针对这些问题，本项目对此在小数据上进行了一定的调整与改进。
 
-本项目在 UAGMC 框架基础上构建了一个城市内城市交通条件的 UAM 起降场调度仿真平台，核心内容包括：
+本项目在 UAGMC 框架基础[1]上构建了一个城市内城市交通条件的 UAM 起降场调度仿真平台，核心内容包括：
 
 （1）X 型 8 起降场网络，覆盖 40×40 km 城市区域，每座起降场可同时承担发送与接收乘客的任务；
 
@@ -294,3 +294,10 @@ python test_improved.py                # 测试本文方法（20维）
 本项目在引入真实多机调度构建了一个简单逻辑的人机协同系统，而来机感知特征使模型能够预判排队趋势，在运力充足时贡献更为明显。短途乘客地面分流机制从源头减少了不必要的起降场排队。
 
 客观来说，在真实的城市系统中难以对所有乘客与eVTLOL进行完整的仿真，故仅是在理想小规模环境下提供了一个轻量化实验框架，在此类场景下精简状态与简单策略足以有效，但是在庞大数据集上实验是适当的利用服务率等参数简化或估计并提升观测维度数量是必要的。
+
+## X. 参考文献
+```
+[1] A. Pang et al., "Heterogeneous Vertiport Selection Optimization for On-Demand Air Taxi Services: A Deep Reinforcement Learning Approach," in IEEE Transactions on Intelligent Transportation Systems, doi: 10.1109/TITS.2026.3680351.
+keywords: {Urban air mobility;Aircraft navigation;Air traffic control;Jamming;System-on-chip;Communication systems;Routing;Vehicle-to-everything;Computer networks;Intserv networks;Urban air mobility;air taxi;deep reinforcement learning;multimodal transportation system},
+```
+
